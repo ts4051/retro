@@ -170,6 +170,7 @@ def estimate(llhp, percentile_nd=0.95):
     estimator['mean'] = {}
     estimator['weighted_mean'] = {}
     estimator['median'] = {}
+    estimator['weighted_median'] = {}
     estimator['low'] = {}
     estimator['high'] = {}
 
@@ -183,18 +184,21 @@ def estimate(llhp, percentile_nd=0.95):
             mean = stats.circmean(var)
             shifted = (var - mean + np.pi)%(2*np.pi)
             weighted_mean = (np.average(shifted, weights=weights) + mean - np.pi)%(2*np.pi)
-            median = (weighted_percentile(shifted, 50, weights) + mean - np.pi)%(2*np.pi)
+            weighted_median = (weighted_percentile(shifted, 50, weights) + mean - np.pi)%(2*np.pi)
+            median = (np.median(shifted) + mean - np.pi)%(2*np.pi)
             low = (weighted_percentile(shifted, percentile, weights) + mean - np.pi)%(2*np.pi)
             high = (weighted_percentile(shifted, 100-percentile, weights) + mean - np.pi)%(2*np.pi)
         else:
             mean = np.mean(var)
             weighted_mean = np.average(var, weights=weights)
-            median = weighted_percentile(var, 50, weights)
+            weighted_median = weighted_percentile(var, 50, weights)
+            median = np.median(var)
             low = weighted_percentile(var, percentile, weights)
             high = weighted_percentile(var, 100-percentile, weights)
         estimator['mean'][col] = mean
         estimator['weighted_mean'][col] = weighted_mean
         estimator['median'][col] = median
+        estimator['weighted_median'][col] = weighted_median
         estimator['low'][col] = low
         estimator['high'][col] = high
     return estimator
