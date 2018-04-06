@@ -132,7 +132,7 @@ def weighted_percentile(data, percentile, weights=None):
     y=np.interp(percentile, p, d)
     return y
 
-def estimate(llhp, percentile_nd=0.95):
+def estimate(llhp, percentile_nd=0.95, meta=None):
     '''
     Evaluate estimator for reconstruction quantities given
     the MultiNest points of LLH space exploration
@@ -141,6 +141,8 @@ def estimate(llhp, percentile_nd=0.95):
     llhp : structured nd array with columns `llh` + any reco quantities
     percentile_nd : float
         on what percentile of llh values to base the calculation on
+    meta : dict
+        meta information from the minimization
     
     Returns : dict of estimated points incluing uncertainties
     '''
@@ -151,20 +153,42 @@ def estimate(llhp, percentile_nd=0.95):
     
     nd = len(columns)
     
-    # replace NaNs with worst LLH value
-    llhp['llh'][np.isnan(llhp['llh'])] = np.min(llhp['llh'][~np.isnan(llhp['llh'])])
-
     # keep best LLHs
-    cut = llhp['llh'] > llhp['llh'].max() - stats.chi2.ppf(percentile_nd, nd)
+    cut = llhp['llh'] > np.nanmax(llhp['llh']) - stats.chi2.ppf(percentile_nd, nd)
     
     if np.sum(cut) == 0:
         raise IndexError('no points')
 
-    # undo exp prior
-    weights = llhp['track_energy'][cut] + llhp['cascade_energy'][cut]
-    # try fuckin around with time
-    #t = llhp['t'][cut]
-    #weights *= (t-t.min()+1)**-0.2
+    # can throw rest away
+    llhp = llhp[cut]
+
+    weights = np.ones(len(llhp))
+    # calculate prior weights
+    if not meta is None:
+        priors = meta['priors_used']
+
+        for dim in ['x', 'y', 'z', 'time']:
+            prior = priors[dim]
+            if prior[0] == 'uniform':
+                continues
+            elif prior[0] == 'spefit2':
+                weights /= stats.cauchy.pdf(llhp[dim], *prior[1])
+            else:
+                raise NotImplementedError('prior %s for dimension %s unknown'%(prior[0], dim))
+
+        assert(priors['track_azimuth'][0] == 'uniform')
+        assert(priors['track_fraction'][0] == 'uniform')
+
+        if priors['track_zenith'][0] == 'cosine':
+
+            weights /= np.clip(np.sin(llhp['track_zenith']), 0.01, None)
+        else:
+            assert(priors['track_zenith'][0] == 'uniform')
+
+        if priors['energy'][0] == 'log_uniform':
+            weights *= llhp['track_energy'] + llhp['cascade_energy']
+        else:
+            assert(priors['energy'][0] == 'uniform')
 
     estimator = {}
     estimator['mean'] = {}
@@ -178,7 +202,7 @@ def estimate(llhp, percentile_nd=0.95):
     percentile = (percentile_nd - 0.682689492137086) / 2. * 100.
 
     for col in columns:
-        var = llhp[col][cut]
+        var = llhp[col]
         if 'azimuth' in col:
             # azimuth is a cyclic function, so need some special treatement to get correct mean
             mean = stats.circmean(var)
