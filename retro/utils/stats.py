@@ -167,28 +167,20 @@ def estimate(llhp, percentile_nd=0.95, meta=None):
     if not meta is None:
         priors = meta['priors_used']
 
-        for dim in ['x', 'y', 'z', 'time']:
+        for dim in columns:
             prior = priors[dim]
             if prior[0] == 'uniform':
-                continues
+                continue
             elif prior[0] == 'spefit2':
                 weights /= stats.cauchy.pdf(llhp[dim], *prior[1])
+            elif prior[0] == 'lognorm':
+                weights /= stats.lognorm.pdf(llhp[dim], *prior[1])
+            elif prior[0] == 'cosine':
+                weights /= np.clip(np.sin(llhp[dim]), 0.01, None)
+            elif prior[0] == 'log_uniform' and dim == 'energy':
+                weights *= llhp['track_energy'] + llhp['cascade_energy']
             else:
                 raise NotImplementedError('prior %s for dimension %s unknown'%(prior[0], dim))
-
-        assert(priors['track_azimuth'][0] == 'uniform')
-        assert(priors['track_fraction'][0] == 'uniform')
-
-        if priors['track_zenith'][0] == 'cosine':
-
-            weights /= np.clip(np.sin(llhp['track_zenith']), 0.01, None)
-        else:
-            assert(priors['track_zenith'][0] == 'uniform')
-
-        if priors['energy'][0] == 'log_uniform':
-            weights *= llhp['track_energy'] + llhp['cascade_energy']
-        else:
-            assert(priors['energy'][0] == 'uniform')
 
     estimator = {}
     estimator['mean'] = {}
