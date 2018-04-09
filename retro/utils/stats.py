@@ -167,18 +167,18 @@ def estimate(llhp, percentile_nd=0.95, meta=None):
     if not meta is None:
         priors = meta['priors_used']
 
-        for dim in columns:
+        for dim in priors.keys():
             prior = priors[dim]
             if prior[0] == 'uniform':
                 continue
             elif prior[0] == 'spefit2':
                 weights /= stats.cauchy.pdf(llhp[dim], *prior[1])
-            elif prior[0] == 'lognorm':
-                weights /= stats.lognorm.pdf(llhp[dim], *prior[1])
-            elif prior[0] == 'cosine':
-                weights /= np.clip(np.sin(llhp[dim]), 0.01, None)
+            elif prior[0] == 'lognorm' and dim == 'energy':
+                weights /= stats.lognorm.pdf(llhp['track_energy'] + llhp['cascade_energy'], *prior[1])
             elif prior[0] == 'log_uniform' and dim == 'energy':
                 weights *= llhp['track_energy'] + llhp['cascade_energy']
+            elif prior[0] == 'cosine':
+                weights /= np.clip(np.sin(llhp[dim]), 0.01, None)
             else:
                 raise NotImplementedError('prior %s for dimension %s unknown'%(prior[0], dim))
 
