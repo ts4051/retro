@@ -124,7 +124,7 @@ def weighted_percentile(data, percentile, weights=None):
     weights specifies the frequency (count) of data.
     '''
     if weights is None:
-        return np.percentile(data, percents)
+        return np.percentile(data, percentile)
     ind=np.argsort(data)
     d=data[ind]
     w=weights[ind]
