@@ -20,19 +20,20 @@ tmpl_lib="--template-library /data/icecube/retro_tables/large_5d_notilt_combined
 #no_noise="--no-noise"
 no_noise=""
 
-#importance_sampling="--importance-sampling"
-importance_sampling=""
+importance_sampling="--importance-sampling"
+#importance_sampling=""
 
 consteff="--const-eff"
 #consteff=""
 
-cascade_kernel="one_dim"
-cascade_samples="--cascade-samples 100"
-#cascade_samples=""
+cascade_kernel="point_ckv"
+cascade_samples=""
+#cascade_kernel="one_dim"
+#cascade_samples="--cascade-samples 500"
 
 
 #kernprof -l -v ~/src/retro/retro/reco.py \
-~/src/retro/retro/reco.py \
+~/retro/retro/reco.py \
     --outdir "$outdir" \
     --spatial-prior SPEFit2 \
     --temporal-prior SPEFit2 \
@@ -40,12 +41,12 @@ cascade_samples="--cascade-samples 100"
     --energy-lims 0.2,2000  \
     \
     $importance_sampling \
-    --max-modes 4 \
+    --max-modes 1 \
     $consteff \
-    --n-live 160 \
-    --evidence-tol 0.5 \
-    --sampling-eff 0.3 \
-    --max-iter 5000 \
+    --n-live 1000 \
+    --evidence-tol 0.08 \
+    --sampling-eff 0.8 \
+    --max-iter 20000 \
     --seed 0 \
     \
     --dom-tables-kind "ckv_templ_compr" \
