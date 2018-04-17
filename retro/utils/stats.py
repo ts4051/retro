@@ -168,8 +168,8 @@ def estimate_from_llhp(llhp, meta=None, per_dim=False, prob_weights=True):
 
     num_dims = len(columns)
 
-    # cut away extremely low llh (50 or more below best point)
-    cut = llhp['llh'] >= np.nanmax(llhp['llh']) - 50
+    # cut away extremely low llh (30 or more below best point)
+    cut = llhp['llh'] >= np.nanmax(llhp['llh']) - 30
     if np.sum(cut) == 0:
         raise IndexError('no points')
 
@@ -255,20 +255,21 @@ def estimate_from_llhp(llhp, meta=None, per_dim=False, prob_weights=True):
 
         var = llhp[col]
         post_llh = np.log(weights)
-        sigma = post_llh > np.max(post_llh) - 9.3
-        weights = weights ** 1./8.
+        sigma = post_llh > np.max(post_llh) - 15.5
+        #weights = weights ** 1./8.
         s_idx = np.argsort(weights)[::-1]
         print(col, weights[s_idx][:10], var[s_idx][:10], post_llh[s_idx][:10])
         #print('low %s, high %s'%(np.min(var[sigma]), np.max(var[sigma])))
         sigma_vals = var[sigma]
+        sigma_weights = None
         if 'azimuth' in col:
             # azimuth is a cyclic function, so need some special treatement to get correct mean
             mean = stats.circmean(var)
             shifted = (var - mean + np.pi)%(2*np.pi)
             median = (np.median(shifted) + mean - np.pi)%(2*np.pi)
             sigma_shifted = (sigma_vals - mean + np.pi)%(2*np.pi)
-            low = (np.min(sigma_shifted) + mean - np.pi)%(2*np.pi)
-            high = (np.max(sigma_shifted) + mean - np.pi)%(2*np.pi)
+            low = (weighted_percentile(sigma_shifted, 13.35, sigma_weights) + mean - np.pi)%(2*np.pi)
+            high = (weighted_percentile(sigma_shifted, 86.65, sigma_weights) + mean - np.pi)%(2*np.pi)
 
             #low = (weighted_percentile(shifted, percentile, weights) + mean - np.pi)%(2*np.pi)
             #high = (weighted_percentile(shifted, 100-percentile, weights) + mean - np.pi)%(2*np.pi)
@@ -278,8 +279,8 @@ def estimate_from_llhp(llhp, meta=None, per_dim=False, prob_weights=True):
         else:
             mean = np.mean(var)
             median = np.median(var)
-            low = np.min(sigma_vals)
-            high = np.max(sigma_vals)
+            low = weighted_percentile(sigma_vals, 13.35, sigma_weights)
+            high = weighted_percentile(sigma_vals, 86.65, sigma_weights)
             #low = weighted_percentile(var, percentile, weights)
             #high = weighted_percentile(var, 100-percentile, weights)
             if weights is not None:
