@@ -14,8 +14,12 @@ mkdir -p "$outdir"
 #proto="/data/icecube/retro_tables/large_5d_notilt_combined/large_5d_notilt_string_{subdet}_depth_{depth_idx}"
 #tmpl_lib="--template-library /data/icecube/retro_tables/large_5d_notilt_combined/ckv_dir_templates.npy"
 
-proto="/data/icecube/retro_tables/large_5d_notilt_combined/stacked"
-tmpl_lib="--template-library /data/icecube/retro_tables/large_5d_notilt_combined/ckv_dir_templates.npy"
+# ET:
+#proto="/data/icecube/retro_tables/large_5d_notilt_combined/stacked"
+#tmpl_lib="--template-library /data/icecube/retro_tables/large_5d_notilt_combined/ckv_dir_templates.npy"
+# ACI:
+proto="/gpfs/group/dfc13/default/retro/tables/large_5d_notilt_combined/stacked/"
+tmpl_lib="--template-library /gpfs/group/dfc13/default/retro/tables/large_5d_notilt_combined/ckv_dir_templates.npy"
 
 #no_noise="--no-noise"
 no_noise=""
@@ -65,7 +69,7 @@ cascade_samples=""
     \
     --events-base "$events_base" \
     --start-idx "$start_idx" \
-    --num-events 1 \
+    --num-events 100 \
     --truth \
     --pulses "OfflinePulses" \
     --recos "SPEFit2" \
