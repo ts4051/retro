@@ -227,12 +227,14 @@ def estimate_from_llhp(llhp, meta=None, per_dim=False, prob_weights=True):
     estimate = OrderedDict()
 
     estimate['mean'] = OrderedDict()
+    estimate['best'] = OrderedDict()
     estimate['median'] = OrderedDict()
     estimate['low'] = OrderedDict()
     estimate['high'] = OrderedDict()
     if prior_weights is not None or prob_weights is not None:
         estimate['weighted_mean'] = OrderedDict()
         estimate['weighted_median'] = OrderedDict()
+        estimate['weighted_best'] = OrderedDict()
 
     # cut away upper and lower 13.35% to arrive at 1 sigma
     percentile = (1 - 0.682689492137086) / 2. * 100.
@@ -257,8 +259,8 @@ def estimate_from_llhp(llhp, meta=None, per_dim=False, prob_weights=True):
         post_llh = np.log(weights)
         sigma = post_llh > np.max(post_llh) - 15.5
         #weights = weights ** 1./8.
-        s_idx = np.argsort(weights)[::-1]
-        print(col, weights[s_idx][:10], var[s_idx][:10], post_llh[s_idx][:10])
+        #s_idx = np.argsort(weights)[::-1]
+        #print(col, weights[s_idx][:10], var[s_idx][:10], post_llh[s_idx][:10])
         #print('low %s, high %s'%(np.min(var[sigma]), np.max(var[sigma])))
         sigma_vals = var[sigma]
         sigma_weights = None
@@ -290,8 +292,14 @@ def estimate_from_llhp(llhp, meta=None, per_dim=False, prob_weights=True):
         estimate['median'][col] = median
         estimate['low'][col] = low
         estimate['high'][col] = high
+
+        best_idx = np.argmax(llhp['llh'])
+        estimate['best'][col] = var[best_idx] 
+
         if weights is not None:
             estimate['weighted_mean'][col] = weighted_mean
             estimate['weighted_median'][col] = weighted_median
+            best_idx = np.argmax(post_llh)
+            estimate['weighted_best'][col] = var[best_idx] 
 
     return estimate
