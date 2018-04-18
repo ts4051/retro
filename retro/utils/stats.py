@@ -199,7 +199,7 @@ def estimate_from_llhp(llhp, meta=None, per_dim=False, prob_weights=True):
                 prior = priors[dim]
                 if prior[0] == 'uniform':
                     w = np.ones(len(llhp))
-                elif prior[0] == 'cauchy':
+                elif prior[0] in ['cauchy', 'spefit2']:
                     w = 1./stats.cauchy.pdf(llhp[dim], *prior[1][:2])
                     #w = np.ones(len(llhp))
                 elif prior[0] == 'log_normal' and dim == 'energy':
