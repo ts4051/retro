@@ -237,6 +237,7 @@ def run_multinest(
         else:
             raise NotImplementedError('Prior "{}" not implemented.'
                                       .format(prior_kind))
+            assert np.isfinite(cube[n]), 'cube dim %u not finite %s'%(n, c[n])
 
         prior_funcs.append(prior_func)
 
@@ -254,8 +255,14 @@ def run_multinest(
         `CUBE_DIMS` for reference elsewhere.
 
         """
-        for prior_func in prior_funcs:
-            prior_func(cube)
+        try:
+            for prior_func in prior_funcs:
+                prior_func(cube)
+        except Exception as e:
+            print('Exception in prior call:')
+            print(e.__doc__)
+            print(e.message)
+            raise 
 
     get_llh = dom_tables._get_llh # pylint: disable=protected-access
     dom_info = dom_tables.dom_info
@@ -290,106 +297,114 @@ def run_multinest(
         ranges.
 
         """
-        if not t_start:
-            t_start.append(time.time())
+        try:
+            if not t_start:
+                t_start.append(time.time())
 
-        t0 = time.time()
+            t0 = time.time()
 
-        total_energy = cube[CUBE_ENERGY_IDX]
-        track_fraction = cube[CUBE_TRACK_FRAC_IDX]
+            total_energy = cube[CUBE_ENERGY_IDX]
+            track_fraction = cube[CUBE_TRACK_FRAC_IDX]
 
-        if HYPO_PARAMS_T is HypoParams8D:
-            hypo = HYPO_PARAMS_T(
-                time=cube[CUBE_T_IDX],
-                x=cube[CUBE_X_IDX],
-                y=cube[CUBE_Y_IDX],
-                z=cube[CUBE_Z_IDX],
-                track_zenith=cube[CUBE_TRACK_ZEN_IDX],
-                track_azimuth=cube[CUBE_TRACK_AZ_IDX],
-                cascade_energy=total_energy * (1 - track_fraction),
-                track_energy=total_energy * track_fraction
-            )
-        else:
-            hypo = HYPO_PARAMS_T(
-                time=cube[CUBE_T_IDX],
-                x=cube[CUBE_X_IDX],
-                y=cube[CUBE_Y_IDX],
-                z=cube[CUBE_Z_IDX],
-                track_zenith=cube[CUBE_TRACK_ZEN_IDX],
-                track_azimuth=cube[CUBE_TRACK_AZ_IDX],
-                cascade_energy=total_energy * (1 - track_fraction),
-                track_energy=total_energy * track_fraction,
-                cascade_zenith=cube[CUBE_CSCD_ZEN_IDX],
-                cascade_azimuth=cube[CUBE_CSCD_AZ_IDX]
-            )
-        sources = hypo_handler.get_sources(hypo)
-        llh = get_llh(
-            sources=sources,
-            hits=hits,
-            hits_indexer=hits_indexer,
-            unhit_sd_indices=unhit_sd_indices,
-            sd_idx_table_indexer=sd_idx_table_indexer,
-            time_window=time_window,
-            dom_info=dom_info,
-            tables=tables,
-            table_norm=table_norm,
-            t_indep_tables=t_indep_tables,
-            t_indep_table_norm=t_indep_table_norm,
-            # DEBUG
-            #table_indices=table_indices,
-            #t_indep_indices=t_indep_indices
-        )
-        # DEBUG
-        #print('')
-        #with open('/tmp/get_llh.asm', 'w') as f:
-        #print(get_llh.inspect_asm(get_llh.signatures[0]))
-        #print('number of signatures:', len(get_llh.signatures))
-        #print('')
-        #raise Exception()
-
-        t1 = time.time()
-
-        param_values.append(hypo)
-        log_likelihoods.append(llh)
-
-        n_calls = len(log_likelihoods)
-
-        if n_calls % report_after == 0:
-            t_now = time.time()
-            best_idx = np.argmax(log_likelihoods)
-            best_llh = log_likelihoods[best_idx]
-            best_p = param_values[best_idx]
-            print('')
             if HYPO_PARAMS_T is HypoParams8D:
-                print(('best llh = {:.3f} @ '
-                       '(t={:+.1f}, x={:+.1f}, y={:+.1f}, z={:+.1f},'
-                       ' zen={:.1f} deg, az={:.1f} deg, Etrk={:.1f}, Ecscd={:.1f})')
-                      .format(
-                          best_llh, best_p.time, best_p.x, best_p.y, best_p.z,
-                          np.rad2deg(best_p.track_zenith),
-                          np.rad2deg(best_p.track_azimuth),
-                          best_p.track_energy,
-                          best_p.cascade_energy))
+                hypo = HYPO_PARAMS_T(
+                    time=cube[CUBE_T_IDX],
+                    x=cube[CUBE_X_IDX],
+                    y=cube[CUBE_Y_IDX],
+                    z=cube[CUBE_Z_IDX],
+                    track_zenith=cube[CUBE_TRACK_ZEN_IDX],
+                    track_azimuth=cube[CUBE_TRACK_AZ_IDX],
+                    cascade_energy=total_energy * (1 - track_fraction),
+                    track_energy=total_energy * track_fraction
+                )
             else:
-                print(('best llh = {:.3f} @'
-                       ' (t={:+.1f}, x={:+.1f}, y={:+.1f}, z={:+.1f},'
-                       ' zen_trk={:.1f} deg, zen_csc={:.1f} deg,'
-                       ' az_trk={:.1f}, az_csc={:.1f},'
-                       ' Etrk={:.1f}, Ecscd={:.1f})')
-                      .format(
-                          best_llh, best_p.time, best_p.x, best_p.y, best_p.z,
-                          np.rad2deg(best_p.track_zenith),
-                          np.rad2deg(best_p.cascade_zenith),
-                          np.rad2deg(best_p.track_azimuth),
-                          np.rad2deg(best_p.cascade_azimuth),
-                          best_p.track_energy,
-                          best_p.cascade_energy))
-            print('{} LLH computed'.format(n_calls))
-            print('avg time per llh: {:.3f} ms'.format((t_now - t_start[0])/n_calls*1000))
-            print('this llh took:    {:.3f} ms'.format((t1 - t0)*1000))
-            print('')
+                hypo = HYPO_PARAMS_T(
+                    time=cube[CUBE_T_IDX],
+                    x=cube[CUBE_X_IDX],
+                    y=cube[CUBE_Y_IDX],
+                    z=cube[CUBE_Z_IDX],
+                    track_zenith=cube[CUBE_TRACK_ZEN_IDX],
+                    track_azimuth=cube[CUBE_TRACK_AZ_IDX],
+                    cascade_energy=total_energy * (1 - track_fraction),
+                    track_energy=total_energy * track_fraction,
+                    cascade_zenith=cube[CUBE_CSCD_ZEN_IDX],
+                    cascade_azimuth=cube[CUBE_CSCD_AZ_IDX]
+                )
+            sources = hypo_handler.get_sources(hypo)
+            llh = get_llh(
+                sources=sources,
+                hits=hits,
+                hits_indexer=hits_indexer,
+                unhit_sd_indices=unhit_sd_indices,
+                sd_idx_table_indexer=sd_idx_table_indexer,
+                time_window=time_window,
+                dom_info=dom_info,
+                tables=tables,
+                table_norm=table_norm,
+                t_indep_tables=t_indep_tables,
+                t_indep_table_norm=t_indep_table_norm,
+                # DEBUG
+                #table_indices=table_indices,
+                #t_indep_indices=t_indep_indices
+            )
+            # DEBUG
+            #print('')
+            #with open('/tmp/get_llh.asm', 'w') as f:
+            #print(get_llh.inspect_asm(get_llh.signatures[0]))
+            #print('number of signatures:', len(get_llh.signatures))
+            #print('')
+            #raise Exception()
 
-        return llh
+            t1 = time.time()
+
+            param_values.append(hypo)
+            log_likelihoods.append(llh)
+
+            n_calls = len(log_likelihoods)
+
+            if n_calls % report_after == 0:
+                t_now = time.time()
+                best_idx = np.argmax(log_likelihoods)
+                best_llh = log_likelihoods[best_idx]
+                best_p = param_values[best_idx]
+                print('')
+                if HYPO_PARAMS_T is HypoParams8D:
+                    print(('best llh = {:.3f} @ '
+                           '(t={:+.1f}, x={:+.1f}, y={:+.1f}, z={:+.1f},'
+                           ' zen={:.1f} deg, az={:.1f} deg, Etrk={:.1f}, Ecscd={:.1f})')
+                          .format(
+                              best_llh, best_p.time, best_p.x, best_p.y, best_p.z,
+                              np.rad2deg(best_p.track_zenith),
+                              np.rad2deg(best_p.track_azimuth),
+                              best_p.track_energy,
+                              best_p.cascade_energy))
+                else:
+                    print(('best llh = {:.3f} @'
+                           ' (t={:+.1f}, x={:+.1f}, y={:+.1f}, z={:+.1f},'
+                           ' zen_trk={:.1f} deg, zen_csc={:.1f} deg,'
+                           ' az_trk={:.1f}, az_csc={:.1f},'
+                           ' Etrk={:.1f}, Ecscd={:.1f})')
+                          .format(
+                              best_llh, best_p.time, best_p.x, best_p.y, best_p.z,
+                              np.rad2deg(best_p.track_zenith),
+                              np.rad2deg(best_p.cascade_zenith),
+                              np.rad2deg(best_p.track_azimuth),
+                              np.rad2deg(best_p.cascade_azimuth),
+                              best_p.track_energy,
+                              best_p.cascade_energy))
+                print('{} LLH computed'.format(n_calls))
+                print('avg time per llh: {:.3f} ms'.format((t_now - t_start[0])/n_calls*1000))
+                print('this llh took:    {:.3f} ms'.format((t1 - t0)*1000))
+                print('')
+
+            assert np.isfinite(llh), 'llh not finite! %s'%llh
+            return llh
+        except Exception as e:
+            print('Exception in LLH call:')
+            print(e.__doc__)
+            print(e.message)
+            raise 
+
 
     n_dims = len(HYPO_PARAMS_T._fields)
     mn_kw = OrderedDict([
