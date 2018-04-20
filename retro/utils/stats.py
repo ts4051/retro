@@ -263,7 +263,8 @@ def estimate_from_llhp(llhp, meta=None, per_dim=False, prob_weights=True):
         #print(col, weights[s_idx][:10], var[s_idx][:10], post_llh[s_idx][:10])
         #print('low %s, high %s'%(np.min(var[sigma]), np.max(var[sigma])))
         sigma_vals = var[sigma]
-        sigma_weights = None
+        #sigma_weights = None
+        sigma_weights = weights[sigma]
         if 'azimuth' in col:
             # azimuth is a cyclic function, so need some special treatement to get correct mean
             mean = stats.circmean(var)
