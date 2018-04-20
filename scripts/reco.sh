@@ -40,11 +40,12 @@ cascade_samples="--cascade-samples 500"
 
 
 #kernprof -l -v ~/src/retro/retro/reco.py \
-gdb -ex r --args python ~/retro/retro/reco.py \
+#gdb -ex r --args python ~/retro/retro/reco.py \
+python ~/retro/retro/reco.py \
     --outdir "$outdir" \
     --spatial-prior SPEFit2 \
     --temporal-prior SPEFit2 \
-    --energy-prior log_normal \
+    --energy-prior log_uniform \
     --energy-lims 0.2,2000  \
     \
     $importance_sampling \
