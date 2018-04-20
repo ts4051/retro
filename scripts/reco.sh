@@ -30,30 +30,31 @@ no_noise=""
 importance_sampling="--importance-sampling"
 #importance_sampling=""
 
-consteff="--const-eff"
-#consteff=""
+#consteff="--const-eff"
+consteff=""
 
-cascade_kernel="point_ckv"
-cascade_samples=""
-#cascade_kernel="one_dim"
-#cascade_samples="--cascade-samples 500"
+#cascade_kernel="point_ckv"
+#cascade_samples=""
+cascade_kernel="one_dim"
+cascade_samples="--cascade-samples 500"
 
 
 #kernprof -l -v ~/src/retro/retro/reco.py \
-~/retro/retro/reco.py \
+#gdb -ex r --args python ~/retro/retro/reco.py \
+python ~/retro/retro/reco.py \
     --outdir "$outdir" \
     --spatial-prior SPEFit2 \
     --temporal-prior SPEFit2 \
-    --energy-prior log_normal \
+    --energy-prior log_uniform \
     --energy-lims 0.2,2000  \
     \
     $importance_sampling \
     --max-modes 1 \
     $consteff \
     --n-live 1000 \
-    --evidence-tol 0.08 \
-    --sampling-eff 0.8 \
-    --max-iter 20000 \
+    --evidence-tol 0.1 \
+    --sampling-eff 0.3 \
+    --max-iter 10000 \
     --seed 0 \
     \
     --dom-tables-kind "ckv_templ_compr" \
