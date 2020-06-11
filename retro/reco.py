@@ -101,7 +101,7 @@ CRS_STOP_FLAGS = {
 }
 
 # TODO: make following args to `__init__` or `run`
-REPORT_AFTER = 100
+REPORT_AFTER = 1000
 
 CART_DIMS = ("x", "y", "z", "time")
 
