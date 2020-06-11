@@ -54,7 +54,7 @@ setup(
         'sobol',
         'sobol_seq',
         'dynesty',
-        'spherical_opt @ git+https://github.com/philippeller/spherical_opt.git',
+        'spherical_opt @ git+https://github.com/philippeller/spherical_opt.git@oscNext1.0',
         'zstandard',
     ],
     packages=find_packages(),
